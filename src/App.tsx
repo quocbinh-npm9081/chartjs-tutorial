@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import GlobalInfo from './components/GlobalInfo'
-import { ResponseData } from './type'
-
+import { GlobalStyle } from './styles/GlobalStyle';
+import { dark } from './styles/Theme';
+import { ThemeProvider } from 'styled-components';
+import GlobalInfo from './components/GlobalInfo';
+import CountryList from './components/CountryList';
+import type { Country, ResponseData } from './type'
+import BarChar from './components/BarChar';
 
 
 
 function App() {
 
   const [data, setData] = useState<ResponseData | undefined>(undefined);
-
+  const [activeCountry, setActiveCountry] = useState<Country[]>([]);
 
   const fetchData = async () => {
     const result = await fetch('https://api.covid19api.com/summary')
@@ -17,20 +21,45 @@ function App() {
     setData(data);
   }
 
+  const onHandleCountryClick = (country: Country) => {
+    const countryIndex = activeCountry.findIndex(acountry => acountry.ID === country.ID)
+    if (countryIndex > -1) {
+      const newActiveCountry = [...activeCountry];
+      newActiveCountry.splice(countryIndex, 1);
+      setActiveCountry([...newActiveCountry])
+
+    } else {
+      setActiveCountry([...activeCountry, country])
+    }
+
+  }
+
   useEffect(() => {
     fetchData()
   }, [])
 
   return (
-    <div>
-      {data ? <GlobalInfo
-        newConfirmed={data?.Global.NewConfirmed}
-        newDeaths={data?.Global.NewDeaths}
-        newRecovered={data?.Global.NewRecovered}
-      /> : "Loading ... "}
-      <h1>Global Covic 19</h1>
+    <>
+      <GlobalStyle />
+      <ThemeProvider theme={dark}>
+        {data ? (
+          <>
+            <GlobalInfo
+              newConfirmed={data?.Global.NewConfirmed}
+              newDeaths={data?.Global.NewDeaths}
+              newRecovered={data?.Global.NewRecovered}
+            />
+            <hr />
 
-    </div>
+            <BarChar countries={activeCountry} />
+            <CountryList countries={data.Countries}
+              onItemCLick={onHandleCountryClick}
+            />
+
+          </>
+        ) : "Loading ... "}
+      </ThemeProvider>
+    </>
   );
 }
 
